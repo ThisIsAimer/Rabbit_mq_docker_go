@@ -5,3 +5,6 @@
 - docker ps (shows running containers)
 - docker stop <name> (stops running container)
 - docker rm <name> (removes container)
+
+## run cmdline interface inside a docker container
+- docker exec -it rabbitmq bash

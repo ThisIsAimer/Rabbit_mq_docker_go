@@ -29,6 +29,16 @@
 
 - docker exec -it rabbitmq1 rabbitmqctl cluster_status
 
+### make ram node
+
+- docker exec -it rabbitmq1 rabbitmqctl stop_app
+
+- docker exec -it rabbitmq1 rabbitmqctl reset
+
+- docker exec -it rabbitmq1 rabbitmqctl join_cluster --ram rabbit@8e27993dac6
+
+- docker exec -it rabbitmq1 rabbitmqctl start_app
+
 ### rabbitmq cmds
 - rabbitmqctl status (status of rabbit mq instance)
 - rabbitmqctl list_queues name type leader members

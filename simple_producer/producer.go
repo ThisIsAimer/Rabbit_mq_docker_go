@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os/exec"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -26,10 +29,10 @@ func main() {
 	// declare queue
 	q, err := ch.QueueDeclare(
 		"q.hello", // queue name
-		true, // durable
-		false, // auto delete
-		false, // exclusive
-		false, // dont wait for server response
+		true,      // durable
+		false,     // auto delete
+		false,     // exclusive
+		false,     // dont wait for server response
 		nil,
 	)
 
@@ -38,15 +41,34 @@ func main() {
 		return
 	}
 
-	fmt.Println(q.Name)
-	err = ch.Publish("",q.Name,false,false, amqp091.Publishing{
+	cmd := exec.Command("docker", "stop", "rabbitmq")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("error is:", err)
+		return
+	}
+
+	// will stop program if message is not qued within 3 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+
+	defer cancel()
+
+	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp091.Publishing{
 		ContentType: "text/plain",
-		Body: []byte("i love golang"),
+		Body:        []byte("i love golang"),
 	})
 
 	if err != nil {
 		fmt.Println("error publishing:", err)
+	}
+
+	
+	cmd = exec.Command("docker", "start", "rabbitmq")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("error is:", err)
 		return
 	}
+
 
 }

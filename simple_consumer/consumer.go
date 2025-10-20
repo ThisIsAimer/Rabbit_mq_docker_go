@@ -26,7 +26,9 @@ func main() {
 		false,     // auto delete
 		false,     // exclusive
 		false,     // dont wait for server response
-		nil,
+		amqp091.Table{
+			"x-queue-type": "quorum", // limits message requeue to 21 times
+		},
 	)
 
 	if err != nil {
@@ -37,13 +39,12 @@ func main() {
 	msgs, err := ch.Consume(
 		q.Name, // queue name
 		"",     // consumer name,
-		true,   // auto acknowledgement
+		false,  // auto acknowledgement
 		false,  // exclusive
 		false,  // no locale
 		false,  // no wait
 		nil,
 	)
-	
 
 	if err != nil {
 		fmt.Println("error consuming message:", err)
@@ -52,6 +53,15 @@ func main() {
 
 	for msg := range msgs {
 		fmt.Println("got message:", string(msg.Body))
+
+		// ack modes----------------------------------------------------------------------------------------
+		
+		// msg.Ack(false) // acknowledgement for this message
+
+		// msg.Nack(false, true) // multiple field is false when you want to do this for multiple messages
+		// // we put it true when batch processing
+
+		// msg.Reject(true) // true false for requeue
 	}
 
 }

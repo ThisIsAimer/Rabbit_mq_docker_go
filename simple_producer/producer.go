@@ -12,6 +12,8 @@ func main() {
 	//connect to rmq
 	//                    user:password
 	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
+	// if we set custom vertual host we write localhost:5672/{hostname}
+	
 	if err != nil {
 		fmt.Println("failed to connect to rmq:", err)
 		return

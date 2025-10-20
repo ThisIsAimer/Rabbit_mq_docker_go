@@ -7,8 +7,6 @@ import (
 )
 
 func main() {
-	//connect to rmq
-	//                    user:password
 	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		fmt.Println("failed to connect to rmq:", err)
@@ -22,14 +20,12 @@ func main() {
 		return
 	}
 	defer ch.Close()
-
-	// declare queue
 	q, err := ch.QueueDeclare(
 		"q.hello", // queue name
-		true, // durable
-		false, // auto delete
-		false, // exclusive
-		false, // dont wait for server response
+		true,      // durable
+		false,     // auto delete
+		false,     // exclusive
+		false,     // dont wait for server response
 		nil,
 	)
 
@@ -38,15 +34,24 @@ func main() {
 		return
 	}
 
-	fmt.Println(q.Name)
-	err = ch.Publish("",q.Name,false,false, amqp091.Publishing{
-		ContentType: "text/plain",
-		Body: []byte("i love golang"),
-	})
+	msgs, err := ch.Consume(
+		q.Name, // queue name
+		"",     // consumer name,
+		true,   // auto acknowledgement
+		false,  // exclusive
+		false,  // no locale
+		false,  // no wait
+		nil,
+	)
+	
 
 	if err != nil {
-		fmt.Println("error publishing:", err)
+		fmt.Println("error consuming message:", err)
 		return
+	}
+
+	for msg := range msgs {
+		fmt.Println("got message:", string(msg.Body))
 	}
 
 }

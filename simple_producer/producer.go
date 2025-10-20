@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"time"
 
 	"github.com/rabbitmq/amqp091-go"
@@ -33,7 +32,9 @@ func main() {
 		false,     // auto delete
 		false,     // exclusive
 		false,     // dont wait for server response
-		nil,
+		amqp091.Table{
+			"x-queue-type": "quorum",
+		},
 	)
 
 	if err != nil {
@@ -41,15 +42,8 @@ func main() {
 		return
 	}
 
-	cmd := exec.Command("docker", "stop", "rabbitmq")
-	err = cmd.Run()
-	if err != nil {
-		fmt.Println("error is:", err)
-		return
-	}
-
 	// will stop program if message is not qued within 3 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 
 	defer cancel()
 
@@ -61,14 +55,5 @@ func main() {
 	if err != nil {
 		fmt.Println("error publishing:", err)
 	}
-
-	
-	cmd = exec.Command("docker", "start", "rabbitmq")
-	err = cmd.Run()
-	if err != nil {
-		fmt.Println("error is:", err)
-		return
-	}
-
 
 }

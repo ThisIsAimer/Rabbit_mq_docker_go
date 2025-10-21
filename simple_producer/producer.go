@@ -30,7 +30,7 @@ func main() {
 	}
 	defer ch.Close()
 
-	err = ch.ExchangeDeclare("x.logs", "direct", true, false, false, false, nil)
+	err = ch.ExchangeDeclare("x.logs", "fanout", true, false, false, false, nil)
 	if err != nil {
 		fmt.Println("error creating exchange:", err)
 		return
@@ -38,7 +38,7 @@ func main() {
 
 	// declare queue
 	q, err := ch.QueueDeclare(
-		"q.hello", // queue name
+		"q.queue1", // queue name
 		true,      // durable
 		false,     // auto delete
 		false,     // exclusive
@@ -53,7 +53,30 @@ func main() {
 		return
 	}
 
-	err = ch.QueueBind(q.Name, "test_key", "x.logs", false, nil)
+	q2, err := ch.QueueDeclare(
+		"q.queue2", // queue name
+		true,      // durable
+		false,     // auto delete
+		false,     // exclusive
+		false,     // dont wait for server response
+		amqp091.Table{
+			"x-queue-type": "quorum",
+		},
+	)
+
+	if err != nil {
+		fmt.Println("error declairing queue:", err)
+		return
+	}
+
+	err = ch.QueueBind(q.Name, "", "x.logs", false, nil)
+
+	if err != nil {
+		fmt.Println("error binding exchange:", err)
+		return
+	}
+
+	err = ch.QueueBind(q2.Name, "", "x.logs", false, nil)
 
 	if err != nil {
 		fmt.Println("error binding exchange:", err)
@@ -84,7 +107,7 @@ func main() {
 			break
 		}
 
-		err = ch.PublishWithContext(ctx, "x.logs", "test_key", false, false, amqp091.Publishing{
+		err = ch.PublishWithContext(ctx, "x.logs", "", false, false, amqp091.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(input),
 		})
@@ -96,6 +119,17 @@ func main() {
 
 	_, err = ch.QueueDelete(
 		q.Name, // queue name
+		false,  // ifUnused (delete only if no consumers)
+		false,  // ifEmpty (delete only if no messages)
+		false,  // noWait
+	)
+	if err != nil {
+		fmt.Println("Queue delete failed:", err)
+		return
+	}
+
+	_, err = ch.QueueDelete(
+		q2.Name, // queue name
 		false,  // ifUnused (delete only if no consumers)
 		false,  // ifEmpty (delete only if no messages)
 		false,  // noWait

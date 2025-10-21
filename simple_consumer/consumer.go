@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -20,29 +23,43 @@ func main() {
 		return
 	}
 	defer ch.Close()
-	q, err := ch.QueueDeclare(
-		"q.hello", // queue name
-		true,      // durable
-		false,     // auto delete
-		false,     // exclusive
-		false,     // dont wait for server response
-		amqp091.Table{
-			"x-queue-type": "quorum", // limits message requeue to 21 times
-		},
-	)
+
+	var queueName string
+
+	queueList := []string{"q.queue1", "q.queue2", "what"}
+
+	fmt.Println("queue options:", queueList)
+	fmt.Print("enter queue name:")
+
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
 
 	if err != nil {
-		fmt.Println("error declairing queue:", err)
+		fmt.Println("error reading string:", err)
+		return
+	}
+
+	for _, name := range queueList {
+
+		if name == input {
+			queueName = name
+		}
+
+	}
+
+	if queueName == "" {
+		fmt.Println("invalid queue name")
 		return
 	}
 
 	msgs, err := ch.Consume(
-		q.Name, // queue name
-		"",     // consumer name,
-		true,  // auto acknowledgement
-		false,  // exclusive
-		false,  // no locale
-		false,  // no wait
+		queueName, // queue name
+		"",        // consumer name,
+		true,      // auto acknowledgement
+		false,     // exclusive
+		false,     // no locale
+		false,     // no wait
 		nil,
 	)
 
@@ -55,7 +72,7 @@ func main() {
 		fmt.Println("got message:", string(msg.Body))
 
 		// ack modes----------------------------------------------------------------------------------------
-		
+
 		// msg.Ack(false) // acknowledgement for this message
 
 		// msg.Nack(false, true) // multiple field is false when you want to do this for multiple messages

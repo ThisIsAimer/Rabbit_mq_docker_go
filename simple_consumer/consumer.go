@@ -39,7 +39,7 @@ func main() {
 	msgs, err := ch.Consume(
 		q.Name, // queue name
 		"",     // consumer name,
-		false,  // auto acknowledgement
+		true,  // auto acknowledgement
 		false,  // exclusive
 		false,  // no locale
 		false,  // no wait
